@@ -14,7 +14,6 @@ load_dotenv()
 # 1. Scrape Wikipedia
 def get_wikipedia_article(topic):
     try:
-        # Get top search result that matches the topic
         title = wikipedia.search(topic)[0]
         page = wikipedia.page(title)
         return [{
@@ -61,7 +60,40 @@ def get_semantic_scholar_papers(query="stuttering", limit=5):
         "url": p.get("url", "")
     } for p in res.get("data", []) if p.get("abstract")]
 
-# 4. Chunk, Embed and Save to FAISS
+# 4. Scrape News Articles (using NewsAPI)
+def get_news_articles(query="stuttering", limit=5):
+    api_key = os.getenv("NEWSAPI_KEY")
+    url = f"https://newsapi.org/v2/everything?q={query}&pageSize={limit}&apiKey={api_key}"
+    res = requests.get(url)
+    if res.status_code != 200:
+        print(f"NewsAPI Error: {res.text}")
+        return []
+    articles = res.json().get("articles", [])
+    return [{
+        "title": a.get("title", ""),
+        "source": "NewsAPI",
+        "content": a.get("description", "") + " " + a.get("content", ""),
+        "url": a.get("url", "")
+    } for a in articles if a.get("content")]
+
+# 5. Scrape Blogs (basic scraper for Medium)
+def get_medium_blogs(keyword="stuttering", limit=3):
+    url = f"https://medium.com/search?q={keyword}"
+    res = requests.get(url)
+    soup = BeautifulSoup(res.text, "html.parser")
+    articles = soup.find_all("h2")
+    blogs = []
+    for a in articles[:limit]:
+        title = a.text
+        blogs.append({
+            "title": title,
+            "source": "Medium",
+            "content": title,  # For now title only, deeper scraping needs Selenium
+            "url": "https://medium.com"  # placeholder
+        })
+    return blogs
+
+# 6. Chunk, Embed, and Save to FAISS
 def process_and_store(docs, db_path="rag_expanded_index"):
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
     documents = []
@@ -84,13 +116,19 @@ def process_and_store(docs, db_path="rag_expanded_index"):
     vectordb = FAISS.from_documents(documents, embeddings)
     vectordb.save_local(db_path)
 
-# 5. Execute the pipeline
+# 7. Execute Full Pipeline
 if __name__ == "__main__":
-    wiki_docs = get_wikipedia_article("Stuttering")
+    wiki_docs = get_wikipedia_article("Stammering")
     reddit_docs = get_reddit_posts("stuttering")
     semantic_docs = get_semantic_scholar_papers("stuttering treatment")
-
-    all_docs = wiki_docs + reddit_docs + semantic_docs
+    news_docs = get_news_articles("stuttering exercises")
+    medium_blogs = get_medium_blogs("stuttering")
+    wiki_docs += get_wikipedia_article("Stammering")
+    reddit_docs += get_reddit_posts("stammering")
+    semantic_docs += get_semantic_scholar_papers("stammering treatment")
+    news_docs += get_news_articles("stammering exercises")
+    medium_blogs += get_medium_blogs("stammering")
+    all_docs = wiki_docs + reddit_docs + semantic_docs + news_docs + medium_blogs
     process_and_store(all_docs)
 
     print("✅ Knowledge base updated and stored in FAISS.")

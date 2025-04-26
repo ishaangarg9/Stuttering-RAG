@@ -87,4 +87,4 @@ if __name__ == "__main__":
     # all_docs = pubmed_docs + stories
 
     # preprocess_and_embed(all_docs)
-    print(query_rag("What are some exercises to improve my stutter?"))
+    print(query_rag("Who are some famous people who stutter?"))
