@@ -1,0 +1,11 @@
+Flask==2.3.3
+flask-cors==4.0.0
+python-dotenv==1.0.1
+langchain==0.1.17
+langchain-community==0.0.34
+langchain-huggingface==0.0.6
+sentence-transformers==2.7.0
+faiss-cpu==1.7.4
+scikit-learn==1.4.2
+numpy==1.26.4
+requests==2.31.0
