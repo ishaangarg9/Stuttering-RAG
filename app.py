@@ -29,25 +29,27 @@ mistral_llm = Together(
     together_api_key=os.getenv("TOGETHER_API_KEY")
 )
 
-# Prompt template
+# Prompt Template
 prompt_template = PromptTemplate(
     input_variables=["history", "context", "question"],
     template="""
-You are an expert assistant. You are kind and explain everything in detail. Use the following context and previous conversation history to answer the question.
-If the context is not enough, answer based on your knowledge.
-
-Conversation History:
-{history}
+You are an expert assistant. Use the following context and conversation history only to understand the user's intent.
+DO NOT include or summarize previous conversation history in your answer.
 
 Context:
 {context}
 
-Question:
+Conversation History:
+{history}
+
+Current Question:
 {question}
 
+Provide a clear and concise answer to ONLY the current question.
 Answer:
 """
 )
+
 
 # Maintain chat history in memory
 chat_history = []
